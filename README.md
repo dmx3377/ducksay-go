@@ -1,8 +1,11 @@
-# ducksay-go 🦆💬
+# ducksay-go
 
-Because the world desperately needed a Go port of a Rust tool that generates HTML comment ducks (specifically named Waddles).
+*Because the world desperately needed a Go port of a Rust tool that generates a duck*.
 
-`ducksay-go` is a direct, rewrite-it-in-Go port of [sboult's ducksay](https://github.com/sboult/ducksay) (which was written in Rust). Why Go? Because compilation times are fast, binaries are single-file, and GC is cool. Also, because we can.
+`ducksay-go` is a direct, rewrite-it-in-Go port of [sboult's `ducksay`](https://github.com/sboult/ducksay) (which was written in Rust). 
+
+### Why Go? 
+Because I hate Rust. *(sorry)*
 
 ## What is this?
 
@@ -19,7 +22,7 @@ Look no further. `ducksay` generates a beautiful ASCII representation of Waddles
  ~~~~~~~~~~~~~~~~~~-->
 ```
 
-Or, if you prefer Twitter's layout standards (where Waddles has a slightly larger eye for some reason):
+Or, if you prefer Twitter's layout standards (where Waddles has a slightly larger eye for some reason, come on Elon...):
 
 ```html
 <!--      _
@@ -42,6 +45,8 @@ Or install it directly to your `$GOPATH/bin`:
 go install
 ```
 
+Or just get the binary from Releases if you don't want to install Go on your machine.
+
 ## Usage
 
 Make Waddles say the default message:
@@ -59,11 +64,11 @@ Wrap the text at a specific column width (default is 40):
 ./ducksay -width 20 "This is a very long message that Waddles will politely wrap for you so it does not overflow your HTML comments."
 ```
 
-Use the Twitter-compatible style (larger eye space):
+Use the Twitter/X-compatible style (larger eye space):
 ```bash
 ./ducksay -twitter "I am tweeting!"
 ```
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](file:///home/david/ducksay-go/LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

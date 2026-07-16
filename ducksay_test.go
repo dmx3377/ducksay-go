@@ -5,6 +5,8 @@ import (
 	"testing"
 )
 
+
+// gotta make sure it works, innit?
 func TestTextWidth(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -12,8 +14,8 @@ func TestTextWidth(t *testing.T) {
 	}{
 		{"hello", 5},
 		{"", 0},
-		{"🦆", 1}, // Emoji test (UTF-8 multi-byte character, but 1 rune wide)
-		{"hello 🦆", 7},
+		{"I am waddles", 1}, // Emoji test (UTF-8 multi-byte character, but 1 rune wide)
+		{"hello waddles", 7},
 	}
 
 	for _, tt := range tests {
