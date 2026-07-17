@@ -60,6 +60,8 @@ func main() {
 	widthFlag := flag.Int("width", DefaultWidth, "Wrap speech text at N columns")
 	flag.IntVar(widthFlag, "w", DefaultWidth, "Wrap speech text at N columns (shorthand)")
 	twitterFlag := flag.Bool("twitter", false, "Use Twitter-compatible output")
+	napFlag := flag.Bool("nap", false, "Waddles takes a nap")
+	sleepFlag := flag.Bool("sleep", false, "Waddles takes a nap (alias for -nap)")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "ducksay - Make Waddles say things.\n\n")
@@ -68,6 +70,11 @@ func main() {
 	}
 
 	flag.Parse()
+
+	if *napFlag || *sleepFlag {
+		fmt.Print("# Waddles takin a nap\n    _\n.__(_)<\n \\___)\n")
+		return
+	}
 
 	// Handle trailing positional arguments as the message
 	message := strings.Join(flag.Args(), " ")
