@@ -31,14 +31,14 @@ type DuckLayout struct {
 }
 
 var TwitterLayout = DuckLayout{
-	Header:          "<!--      _\n",
+	Header:          "<!--       _\n",
 	SpeechPrefix:    "        .__( . )< ",
 	Body:            "         \\___)",
 	ContinuationGap: "     ",
 }
 
 var MonoLayout = DuckLayout{
-	Header:          "<!--       _\n",
+	Header:          "<!--        _\n",
 	SpeechPrefix:    "        .__(.)< ",
 	Body:            "         \\___)",
 	ContinuationGap: "    ",
