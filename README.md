@@ -2,7 +2,7 @@
 
 *Because the world desperately needed a Go port of a Rust tool that generates a duck*.
 
-`ducksay-go` is a direct, rewrite-it-in-Go port of [sboult's `ducksay`](https://github.com/sboult/ducksay) (which was written in Rust). 
+`ducksay-go` is a port of [sboult's `ducksay`](https://github.com/sboult/ducksay) (which was written in Rust), but I also added some more stuff that isn't in the original repo.
 
 ### Why Go? 
 Because I hate Rust. *(sorry)*
