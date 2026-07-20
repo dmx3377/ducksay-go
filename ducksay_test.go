@@ -96,3 +96,75 @@ func TestRender(t *testing.T) {
 		t.Errorf("Expected render to contain Twitter duck layout, got:\n%s", resultTwitter)
 	}
 }
+
+func TestRenderCustom(t *testing.T) {
+	// Test Go comments line styling
+	resultGo := RenderCustom("hello", 10, StyleMono, "go", "", "")
+	if !strings.Contains(resultGo, "//          _") {
+		t.Errorf("Expected RenderCustom with go style header to be aligned, got:\n%s", resultGo)
+	}
+	if !strings.Contains(resultGo, "//      .__(.)< (hello)") {
+		t.Errorf("Expected RenderCustom with go style to prefix with //, got:\n%s", resultGo)
+	}
+	if !strings.Contains(resultGo, "// ~~~~~~~~~~~~~~~~~~") {
+		t.Errorf("Expected RenderCustom with go style footer to be // ~~~~~~~~~~~~~~~~~~, got:\n%s", resultGo)
+	}
+
+	// Test Python comments styling
+	resultPy := RenderCustom("hello", 10, StyleMono, "py", "", "")
+	if !strings.Contains(resultPy, "#           _") {
+		t.Errorf("Expected RenderCustom with py style header to be aligned, got:\n%s", resultPy)
+	}
+	if !strings.Contains(resultPy, "#       .__(.)< (hello)") {
+		t.Errorf("Expected RenderCustom with py style to prefix with #, got:\n%s", resultPy)
+	}
+
+	// Test Raw/None styling
+	resultNone := RenderCustom("hello", 10, StyleMono, "none", "", "")
+	if !strings.Contains(resultNone, "            _") {
+		t.Errorf("Expected RenderCustom with none style header to be aligned, got:\n%s", resultNone)
+	}
+	if !strings.Contains(resultNone, "        .__(.)< (hello)") {
+		t.Errorf("Expected RenderCustom with none style to have no comment prefix, got:\n%s", resultNone)
+	}
+
+	// Test Color code rendering
+	resultColor := RenderCustom("hello", 10, StyleMono, "go", "red", "blue")
+	if !strings.Contains(resultColor, "\x1b[31m") {
+		t.Errorf("Expected RenderCustom output to contain red ANSI code, got:\n%s", resultColor)
+	}
+	if !strings.Contains(resultColor, "\x1b[34m") {
+		t.Errorf("Expected RenderCustom output to contain blue ANSI code, got:\n%s", resultColor)
+	}
+
+	// Test DevGreen rendering
+	resultDevGreen := RenderCustom("hello", 10, StyleMono, "go", "devgreen", "")
+	if !strings.Contains(resultDevGreen, "\x1b[38;2;0;229;130m") {
+		t.Errorf("Expected RenderCustom output to contain devgreen truecolor ANSI code, got:\n%s", resultDevGreen)
+	}
+
+	// Test Custom Hex rendering
+	resultHex := RenderCustom("hello", 10, StyleMono, "go", "#aabbcc", "")
+	if !strings.Contains(resultHex, "\x1b[38;2;170;187;204m") {
+		t.Errorf("Expected RenderCustom output to contain parsed hex truecolor ANSI code, got:\n%s", resultHex)
+	}
+}
+
+func TestParseHexColor(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+		ok       bool
+	}{
+		{"#00E582", "\x1b[38;2;0;229;130m", true},
+		{"#fff", "\x1b[38;2;255;255;255m", true},
+		{"invalid", "", false},
+	}
+
+	for _, tt := range tests {
+		actual, ok := parseHexColor(tt.input)
+		if ok != tt.ok || actual != tt.expected {
+			t.Errorf("parseHexColor(%q) = (%q, %t); want (%q, %t)", tt.input, actual, ok, tt.expected, tt.ok)
+		}
+	}
+}

@@ -31,14 +31,14 @@ type DuckLayout struct {
 }
 
 var TwitterLayout = DuckLayout{
-	Header:          "<!--       _\n",
+	Header:          "<!--          _\n",
 	SpeechPrefix:    "        .__( . )< ",
 	Body:            "         \\___)",
 	ContinuationGap: "     ",
 }
 
 var MonoLayout = DuckLayout{
-	Header:          "<!--        _\n",
+	Header:          "<!--           _\n",
 	SpeechPrefix:    "        .__(.)< ",
 	Body:            "         \\___)",
 	ContinuationGap: "    ",
@@ -62,6 +62,9 @@ func main() {
 	twitterFlag := flag.Bool("twitter", false, "Use Twitter-compatible output")
 	napFlag := flag.Bool("nap", false, "Waddles takes a nap")
 	sleepFlag := flag.Bool("sleep", false, "Waddles takes a nap (alias for -nap)")
+	styleFlag := flag.String("style", "html", "Comment style (html, go, js, py, sql, none, etc.)")
+	colorDuckFlag := flag.String("color-duck", "", "Color of the duck (red, green, yellow, blue, magenta, cyan, white, devgreen, or hex code)")
+	colorBubbleFlag := flag.String("color-bubble", "", "Color of the speech bubble (red, green, yellow, blue, magenta, cyan, white, devgreen, or hex code)")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "ducksay - Make Waddles say things.\n\n")
@@ -93,7 +96,7 @@ func main() {
 		style = StyleTwitter
 	}
 
-	fmt.Print(RenderWithStyle(message, width, style))
+	fmt.Print(RenderCustom(message, width, style, *styleFlag, *colorDuckFlag, *colorBubbleFlag))
 }
 
 // Render with default Mono style
@@ -103,57 +106,209 @@ func Render(message string, width int) string {
 
 // Render with custom layout style
 func RenderWithStyle(message string, width int, style Style) string {
-	lines := wrapMessage(message, width)
-	return renderDuck(lines, style.Layout())
+	return RenderCustom(message, width, style, "html", "", "")
 }
 
-func renderDuck(lines []string, layout DuckLayout) string {
+// RenderCustom renders the duck with custom style, comment wrappers, and colors
+func RenderCustom(message string, width int, duckStyle Style, commentStyle string, duckColorName string, bubbleColorName string) string {
+	lines := wrapMessage(message, width)
+	prefix, suffix, isBlock := getCommentConfig(commentStyle)
+	duckColor := getColorCode(duckColorName)
+	bubbleColor := getColorCode(bubbleColorName)
+	return renderDuckCustom(lines, duckStyle, prefix, suffix, isBlock, duckColor, bubbleColor)
+}
+
+func renderDuckCustom(lines []string, duckStyle Style, prefix, suffix string, isBlock bool, duckColor, bubbleColor string) string {
 	var output strings.Builder
 
-	output.WriteString(layout.Header)
-
-	switch len(lines) {
-	case 1:
-		writeSingleLineMessage(&output, layout, lines[0])
-	default:
-		if len(lines) > 1 {
-			writeWrappedMessage(&output, layout, lines[0], lines[1:])
-		} else {
-			writeSingleLineMessage(&output, layout, "")
-		}
+	eye := "."
+	if duckStyle == StyleTwitter {
+		eye = " . "
 	}
 
-	output.WriteString(Footer)
+	duckHeadStr := ".__(" + eye + ")<"
+	duckBodyStr := "\\___)"
+
+	// Header
+	pLen := utf8.RuneCountInString(prefix)
+	var headerLen int
+	if duckStyle == StyleTwitter {
+		headerLen = 13 - pLen
+	} else {
+		headerLen = 12 - pLen
+	}
+	if headerLen < 0 {
+		headerLen = 0
+	}
+	headerSpaces := strings.Repeat(" ", headerLen)
+
+	output.WriteString(colorText(prefix, bubbleColor))
+	output.WriteString(headerSpaces)
+	output.WriteString(colorText("_", duckColor))
+	output.WriteByte('\n')
+
+	// Line-by-line helper values
+	var headIndent string
+	var bodyIndent string
+	var contGap string
+
+	if isBlock {
+		headIndent = "        "  // 8 spaces
+		bodyIndent = "         " // 9 spaces
+	} else {
+		pLen := utf8.RuneCountInString(prefix)
+		headLen := 8 - pLen
+		if headLen < 0 {
+			headLen = 0
+		}
+		headIndent = strings.Repeat(" ", headLen)
+
+		bodyLen := 9 - pLen
+		if bodyLen < 0 {
+			bodyLen = 0
+		}
+		bodyIndent = strings.Repeat(" ", bodyLen)
+	}
+
+	if duckStyle == StyleTwitter {
+		contGap = "     " // 5 spaces
+	} else {
+		contGap = "    " // 4 spaces
+	}
+
+	// Write bubble and duck
+	firstLine := ""
+	if len(lines) > 0 {
+		firstLine = lines[0]
+	}
+
+	if isBlock {
+		output.WriteString(headIndent)
+	} else {
+		output.WriteString(colorText(prefix, bubbleColor))
+		output.WriteString(headIndent)
+	}
+	output.WriteString(colorText(duckHeadStr, duckColor))
+	output.WriteString(" ")
+	output.WriteString(colorText("(", bubbleColor))
+	output.WriteString(colorText(firstLine, bubbleColor))
+
+	if len(lines) > 1 {
+		output.WriteByte('\n')
+		if isBlock {
+			output.WriteString(bodyIndent)
+		} else {
+			output.WriteString(colorText(prefix, bubbleColor))
+			output.WriteString(bodyIndent)
+		}
+		output.WriteString(colorText(duckBodyStr, duckColor))
+		output.WriteString(contGap)
+
+		var rest strings.Builder
+		for i, line := range lines[1:] {
+			if i > 0 {
+				rest.WriteByte(' ')
+			}
+			rest.WriteString(line)
+		}
+		output.WriteString(colorText(rest.String(), bubbleColor))
+		output.WriteString(colorText(")\n", bubbleColor))
+	} else {
+		output.WriteString(colorText(")\n", bubbleColor))
+		if isBlock {
+			output.WriteString(bodyIndent)
+		} else {
+			output.WriteString(colorText(prefix, bubbleColor))
+			output.WriteString(bodyIndent)
+		}
+		output.WriteString(colorText(duckBodyStr, duckColor))
+		output.WriteByte('\n')
+	}
+
+	// Footer
+	if isBlock {
+		output.WriteString(colorText(" ~~~~~~~~~~~~~~~~~~", bubbleColor))
+		output.WriteString(colorText(suffix, bubbleColor))
+		output.WriteByte('\n')
+	} else {
+		output.WriteString(colorText(prefix, bubbleColor))
+		output.WriteString(colorText(" ~~~~~~~~~~~~~~~~~~\n", bubbleColor))
+	}
+
 	return output.String()
 }
 
-func writeSingleLineMessage(output *strings.Builder, layout DuckLayout, line string) {
-	output.WriteString(layout.SpeechPrefix)
-	output.WriteByte('(')
-	output.WriteString(line)
-	output.WriteString(")\n")
-	output.WriteString(layout.Body)
-	output.WriteByte('\n')
-}
-
-func writeWrappedMessage(output *strings.Builder, layout DuckLayout, first string, rest []string) {
-	output.WriteString(layout.SpeechPrefix)
-	output.WriteByte('(')
-	output.WriteString(first)
-	output.WriteByte('\n')
-	output.WriteString(layout.Body)
-	output.WriteString(layout.ContinuationGap)
-	writeContinuationLines(output, rest)
-	output.WriteString(")\n")
-}
-
-func writeContinuationLines(output *strings.Builder, lines []string) {
-	for i, line := range lines {
-		if i > 0 {
-			output.WriteByte(' ')
-		}
-		output.WriteString(line)
+func getCommentConfig(styleName string) (string, string, bool) {
+	switch strings.ToLower(strings.TrimSpace(styleName)) {
+	case "html", "xml", "default":
+		return "<!--", "-->", true
+	case "go", "js", "ts", "cpp", "c", "java", "rust", "swift", "cs", "kotlin", "scala":
+		return "//", "", false
+	case "py", "python", "sh", "bash", "rb", "ruby", "pl", "perl", "yaml", "yml", "make", "docker", "toml":
+		return "#", "", false
+	case "sql", "lua", "hs", "haskell", "ada":
+		return "--", "", false
+	case "none", "raw":
+		return "", "", false
+	default:
+		return "<!--", "-->", true
 	}
+}
+
+func getColorCode(colorName string) string {
+	colorName = strings.ToLower(strings.TrimSpace(colorName))
+	if colorName == "" {
+		return ""
+	}
+	switch colorName {
+	case "red":
+		return "\x1b[31m"
+	case "green":
+		return "\x1b[32m"
+	case "yellow":
+		return "\x1b[33m"
+	case "blue":
+		return "\x1b[34m"
+	case "magenta":
+		return "\x1b[35m"
+	case "cyan":
+		return "\x1b[36m"
+	case "white":
+		return "\x1b[37m"
+	case "devgreen", "dev-green", "dev green":
+		return "\x1b[38;2;0;229;130m"
+	}
+	if strings.HasPrefix(colorName, "#") {
+		if code, ok := parseHexColor(colorName); ok {
+			return code
+		}
+	}
+	return ""
+}
+
+func parseHexColor(hex string) (string, bool) {
+	hex = strings.TrimPrefix(hex, "#")
+	if len(hex) == 3 {
+		var r, g, b byte
+		_, err := fmt.Sscanf(hex, "%1x%1x%1x", &r, &g, &b)
+		if err == nil {
+			return fmt.Sprintf("\x1b[38;2;%d;%d;%dm", r*17, g*17, b*17), true
+		}
+	} else if len(hex) == 6 {
+		var r, g, b byte
+		_, err := fmt.Sscanf(hex, "%2x%2x%2x", &r, &g, &b)
+		if err == nil {
+			return fmt.Sprintf("\x1b[38;2;%d;%d;%dm", r, g, b), true
+		}
+	}
+	return "", false
+}
+
+func colorText(text string, colorCode string) string {
+	if colorCode == "" || text == "" {
+		return text
+	}
+	return colorCode + text + "\x1b[0m"
 }
 
 func wrapMessage(message string, width int) []string {
